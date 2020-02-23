@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<!--
+Copyright 2018 The Go Authors. All rights reserved.
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file.
+-->
+<html>
+
+<head>
+	<meta charset="utf-8" />
+	<title>lba calc</title>
+</head>
+
+<body>
+	<link rel="stylesheet" href="bulma.css">
+	<style>
+		.form-container {
+			padding: 10px;
+			background: whitesmoke;
+		}
+	</style>
+	<script src="wasm_exec.js"></script>
+	<script>
+		if (!WebAssembly.instantiateStreaming) {
+			// polyfill
+			WebAssembly.instantiateStreaming = async (resp, importObject) => {
+				const source = await (await resp).arrayBuffer();
+				return await WebAssembly.instantiate(source, importObject);
+			};
+		}
+
+		const go = new Go();
+		let mod, inst;
+		WebAssembly.instantiateStreaming(fetch("lib.wasm"), go.importObject).then(async result => {
+			mod = result.module;
+			inst = result.instance;
+			await go.run(inst);
+		});
+	</script>
+
+	<section class="section">
+		<div class="container">
+			<h1 class="title">Calc</h1>
+			<h2 class="subtitle">
+				Prices and durations are just bolted on atm, can expect issues. Can expect them everywhere, really.
+			</h2>
+
+			<div class="columns">
+				<form id="form" class="column">
+					<div class="form-container">
+						<h4 class="subtitle is-4">Customer</h4>
+						<div class="columns">
+							<div class="column is-two-fifths">
+								<div class="field">
+									<label class="label">Rsn</label>
+									<div class="control">
+										<input class="input" type="text" name="rsn" required placeholder="rsn">
+									</div>
+								</div>
+							</div>
+
+							<div class="column is-two-fifths">
+								<div class="field">
+									<label class="label">Enhancer charges</label>
+									<div class="control">
+										<input class="input" type="number" name="charges" min="0" max="20000">
+									</div>
+								</div>
+							</div>
+
+							<div class="column is-one-fifth">
+								<div class="field">
+									<label class="label">Ba progress</label>
+									<div class="control">
+										<div class="select">
+											<select name="progress">
+												<option value="1">NM1</option>
+												<option value="2">HM1</option>
+												<option value="3">HM6</option>
+												<option value="4">HM10</option>
+											</select>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="columns">
+							<div class="column">
+								<div class="field">
+									<div class="control">
+										<label class="checkbox">
+											<input type="checkbox" name="ironman">
+											I'm an ironman
+										</label>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<hr>
+					<div class="form-container">
+						<h4 class="subtitle is-4">Points</h4>
+						<div class="columns">
+							<div class="column is-one-quarter">
+								<div class="field">
+									<label class="label">Attacker</label>
+									<div class="control">
+										<input class="input" type="number" name="attacker" min="0" max="5000">
+									</div>
+								</div>
+							</div>
+
+							<div class="column is-one-quarter">
+								<div class="field">
+									<label class="label">Defender</label>
+									<div class="control">
+										<input class="input" type="number" name="defender" min="0" max="5000">
+									</div>
+								</div>
+							</div>
+
+							<div class="column is-one-quarter">
+								<div class="field">
+									<label class="label">Healer</label>
+									<div class="control">
+										<input class="input" type="number" name="healer" min="0" max="5000">
+									</div>
+								</div>
+							</div>
+
+							<div class="column is-one-quarter">
+								<div class="field">
+									<label class="label">Collector</label>
+									<div class="control">
+										<input class="input" type="number" name="collector" min="0" max="5000">
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<hr>
+					<div class="form-container">
+						<h4 class="subtitle is-4">Bxp</h4>
+						<div class="columns">
+							<div class="column is-one-third">
+								<div class="field">
+									<label class="label">Agility</label>
+									<div class="control">
+										<input class="input" type="number" name="agility" min="0" max="100000000">
+									</div>
+								</div>
+							</div>
+
+							<div class="column is-one-third">
+								<div class="field">
+									<label class="label">Firemaking</label>
+									<div class="control">
+										<input class="input" type="number" name="firemaking" min="0" max="100000000">
+									</div>
+								</div>
+							</div>
+
+							<div class="column is-one-third">
+								<div class="field">
+									<label class="label">Mining</label>
+									<div class="control">
+										<input class="input" type="number" name="mining" min="0" max="100000000">
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<hr>
+					<div class="form-container">
+						<h4 class="subtitle is-4">Stuff</h4>
+						<div class="columns">
+							<div class="column is-one-third">
+								<div class="field">
+									<label class="label">Queens</label>
+									<div class="control">
+										<input class="input" type="number" name="queen" min="0" max="100">
+									</div>
+								</div>
+							</div>
+
+							<div class="column is-one-third">
+								<div class="field">
+									<label class="label">Kings</label>
+									<div class="control">
+										<input class="input" type="number" name="king" min="0" max="100">
+									</div>
+								</div>
+							</div>
+
+							<div class="column is-one-third">
+								<div class="field">
+									<label class="label">Tickets</label>
+									<div class="control">
+										<input class="input" type="number" name="hm10tickets" min="0" max="1000">
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</form>
+
+				<pre id="output" class="column"></pre>
+			</div>
+		</div>
+	</section>
+
+	<script type="text/javascript">
+		let form = document.querySelector('#form');
+		let output = document.querySelector('#output');
+
+		form.addEventListener('input', () => {
+			let data = new FormData(form);
+			let request = {
+				rsn: data.get("rsn") || "",
+				ironman: data.get("ironman") == "on" ? true : false,
+				progress: parseInt(data.get("progress"), 10) || 0,
+				charges: parseInt(data.get("charges"), 10) || 0,
+				pts: {
+					attacker: parseInt(data.get("attacker"), 10) || 0,
+					defender: parseInt(data.get("defender"), 10) || 0,
+					healer: parseInt(data.get("healer"), 10) || 0,
+					collector: parseInt(data.get("collector"), 10) || 0,
+				},
+				bxp: {
+					agility: parseInt(data.get("agility"), 10) || 0,
+					firemaking: parseInt(data.get("firemaking"), 10) || 0,
+					mining: parseInt(data.get("mining"), 10) || 0,
+				},
+				queen: parseInt(data.get("queen"), 10) || 0,
+				king: parseInt(data.get("king"), 10) || 0,
+				hm10tickets: parseInt(data.get("hm10tickets"), 10) || 0,
+			};
+
+			form.querySelectorAll('input, select').forEach(e => {
+				if (e.checkValidity()) {
+					e.classList.add('is-success');
+					e.classList.remove('is-danger');
+				} else {
+					e.classList.add('is-danger');
+					e.classList.remove('is-success');
+				}
+			});
+
+			if (form.checkValidity()) {
+				output.textContent = process(request);
+			} else {
+				output.textContent = "";
+			}
+		});
+	</script>
+</body>
+
+</html>
