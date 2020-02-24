@@ -18,6 +18,56 @@ license that can be found in the LICENSE file.
 			padding: 10px;
 			background: whitesmoke;
 		}
+
+		input.switch:empty {
+			margin-left: -999px;
+		}
+
+		input.switch:empty~label {
+			position: relative;
+			float: left;
+			line-height: 25.6px;
+			text-indent: 64px;
+			margin: 3.2px 0;
+			cursor: pointer;
+			-webkit-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
+			font-size: 16px !important;
+		}
+
+		input.switch:empty~label:before,
+		input.switch:empty~label:after {
+			position: absolute;
+			display: block;
+			top: 0;
+			bottom: 0;
+			left: 0;
+			content: ' ';
+			width: 3.6em;
+			background-color: #ed6c63;
+			border-radius: 50px;
+			-webkit-transition: all 100ms ease-in;
+			transition: all 100ms ease-in;
+		}
+
+		input.switch:empty~label:after {
+			width: 16.4px;
+			top: 4.6px;
+			bottom: 4.6px;
+			margin-left: 4.6px;
+			background-color: #fff;
+			border-radius: 10px;
+		}
+
+		input.switch:checked~label:before {
+			background-color: #97cd76;
+		}
+
+		input.switch:checked~label:after {
+			margin-left: 33.6px;
+		}
 	</style>
 	<script src="wasm_exec.js"></script>
 	<script>
@@ -48,7 +98,6 @@ license that can be found in the LICENSE file.
 			<div class="columns">
 				<form id="form" class="column">
 					<div class="form-container">
-						<h4 class="subtitle is-4">Customer</h4>
 						<div class="columns">
 							<div class="column is-two-fifths">
 								<div class="field">
@@ -63,7 +112,7 @@ license that can be found in the LICENSE file.
 								<div class="field">
 									<label class="label">Enhancer charges</label>
 									<div class="control">
-										<input class="input" type="number" name="charges" min="0" max="20000">
+										<input class="input" type="number" name="charges" min="0" max="20000" value="0">
 									</div>
 								</div>
 							</div>
@@ -72,7 +121,7 @@ license that can be found in the LICENSE file.
 								<div class="field">
 									<label class="label">Ba progress</label>
 									<div class="control">
-										<div class="select">
+										<div class="select is-fullwidth">
 											<select name="progress">
 												<option value="1">NM1</option>
 												<option value="2">HM1</option>
@@ -88,25 +137,34 @@ license that can be found in the LICENSE file.
 						<div class="columns">
 							<div class="column">
 								<div class="field">
-									<div class="control">
-										<label class="checkbox">
-											<input type="checkbox" name="ironman">
-											I'm an ironman
-										</label>
+									<div class="control is-two-fifths">
+										<input type="checkbox" class="switch" id="ironman" name="ironman">
+										<label for="ironman">I'm an ironman</label>
 									</div>
+								</div>
+							</div>
+							<div class="column is-hidden is-three-fifths" id="tickets">
+								<div class="field">
+									<label class="label">Tickets</label>
+									<div class="control">
+										<input class="input" type="number" name="hm10tickets" min="0" max="1000"
+											value="0">
+									</div>
+									<p class="help">If you have saved your ticket(s) we will use them for 6-9s and kings
+										when necessary. Otherwise we might have to do 1-9s first.</p>
 								</div>
 							</div>
 						</div>
 					</div>
 					<hr>
 					<div class="form-container">
-						<h4 class="subtitle is-4">Points</h4>
+						<h5 class="title is-5">Points</h5>
 						<div class="columns">
 							<div class="column is-one-quarter">
 								<div class="field">
 									<label class="label">Attacker</label>
 									<div class="control">
-										<input class="input" type="number" name="attacker" min="0" max="5000">
+										<input class="input" type="number" name="attacker" min="0" max="5000" value="0">
 									</div>
 								</div>
 							</div>
@@ -115,7 +173,7 @@ license that can be found in the LICENSE file.
 								<div class="field">
 									<label class="label">Defender</label>
 									<div class="control">
-										<input class="input" type="number" name="defender" min="0" max="5000">
+										<input class="input" type="number" name="defender" min="0" max="5000" value="0">
 									</div>
 								</div>
 							</div>
@@ -124,7 +182,7 @@ license that can be found in the LICENSE file.
 								<div class="field">
 									<label class="label">Healer</label>
 									<div class="control">
-										<input class="input" type="number" name="healer" min="0" max="5000">
+										<input class="input" type="number" name="healer" min="0" max="5000" value="0">
 									</div>
 								</div>
 							</div>
@@ -133,21 +191,21 @@ license that can be found in the LICENSE file.
 								<div class="field">
 									<label class="label">Collector</label>
 									<div class="control">
-										<input class="input" type="number" name="collector" min="0" max="5000">
+										<input class="input" type="number" name="collector" min="0" max="5000"
+											value="0">
 									</div>
 								</div>
 							</div>
 						</div>
-					</div>
-					<hr>
-					<div class="form-container">
-						<h4 class="subtitle is-4">Bxp</h4>
+
+						<h5 class="title is-5">Bxp</h5>
 						<div class="columns">
 							<div class="column is-one-third">
 								<div class="field">
 									<label class="label">Agility</label>
 									<div class="control">
-										<input class="input" type="number" name="agility" min="0" max="100000000">
+										<input class="input" type="number" name="agility" min="0" max="100000000"
+											value="0">
 									</div>
 								</div>
 							</div>
@@ -156,7 +214,8 @@ license that can be found in the LICENSE file.
 								<div class="field">
 									<label class="label">Firemaking</label>
 									<div class="control">
-										<input class="input" type="number" name="firemaking" min="0" max="100000000">
+										<input class="input" type="number" name="firemaking" min="0" max="100000000"
+											value="0">
 									</div>
 								</div>
 							</div>
@@ -165,39 +224,29 @@ license that can be found in the LICENSE file.
 								<div class="field">
 									<label class="label">Mining</label>
 									<div class="control">
-										<input class="input" type="number" name="mining" min="0" max="100000000">
+										<input class="input" type="number" name="mining" min="0" max="100000000"
+											value="0">
 									</div>
 								</div>
 							</div>
 						</div>
-					</div>
-					<hr>
-					<div class="form-container">
-						<h4 class="subtitle is-4">Stuff</h4>
+
+						<h5 class="title is-5">Stuff</h5>
 						<div class="columns">
-							<div class="column is-one-third">
+							<div class="column is-one-half">
 								<div class="field">
 									<label class="label">Queens</label>
 									<div class="control">
-										<input class="input" type="number" name="queen" min="0" max="100">
+										<input class="input" type="number" name="queen" min="0" max="100" value="0">
 									</div>
 								</div>
 							</div>
 
-							<div class="column is-one-third">
+							<div class="column is-one-half">
 								<div class="field">
 									<label class="label">Kings</label>
 									<div class="control">
-										<input class="input" type="number" name="king" min="0" max="100">
-									</div>
-								</div>
-							</div>
-
-							<div class="column is-one-third">
-								<div class="field">
-									<label class="label">Tickets</label>
-									<div class="control">
-										<input class="input" type="number" name="hm10tickets" min="0" max="1000">
+										<input class="input" type="number" name="king" min="0" max="100" value="0">
 									</div>
 								</div>
 							</div>
@@ -213,6 +262,7 @@ license that can be found in the LICENSE file.
 	<script type="text/javascript">
 		let form = document.querySelector('#form');
 		let output = document.querySelector('#output');
+		let ticketsColumn = document.querySelector('#tickets');
 
 		form.addEventListener('input', () => {
 			let data = new FormData(form);
@@ -237,13 +287,22 @@ license that can be found in the LICENSE file.
 				hm10tickets: parseInt(data.get("hm10tickets"), 10) || 0,
 			};
 
+			if (request.ironman && request.progress === 4) {
+				ticketsColumn.classList.remove('is-hidden');
+			} else {
+				ticketsColumn.classList.add('is-hidden');
+				tickets.querySelector('input').value = 0;
+				request.hm10tickets = 0;
+			}
+
 			form.querySelectorAll('input, select').forEach(e => {
+				e.classList.remove('is-danger');
+				e.classList.remove('is-success');
+
 				if (e.checkValidity()) {
 					e.classList.add('is-success');
-					e.classList.remove('is-danger');
 				} else {
 					e.classList.add('is-danger');
-					e.classList.remove('is-success');
 				}
 			});
 

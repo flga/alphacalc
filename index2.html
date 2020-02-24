@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<!--
+Copyright 2018 The Go Authors. All rights reserved.
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file.
+-->
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>lba calc</title>
+</head>
+
+<body>
+    <link rel="stylesheet" href="bulma.css">
+    <style>
+        .form-container {
+            /* padding: 10px; */
+            /* background: whitesmoke; */
+        }
+
+        input.switch:empty {
+            margin-left: -999px;
+        }
+
+        input.switch:empty~label {
+            position: relative;
+            float: left;
+            line-height: 25.6px;
+            text-indent: 64px;
+            margin: 3.2px 0;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            font-size: 16px !important;
+        }
+
+        input.switch:empty~label:before,
+        input.switch:empty~label:after {
+            position: absolute;
+            display: block;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            content: ' ';
+            width: 3.6em;
+            background-color: #ed6c63;
+            border-radius: 50px;
+            -webkit-transition: all 100ms ease-in;
+            transition: all 100ms ease-in;
+        }
+
+        input.switch:empty~label:after {
+            width: 16.4px;
+            top: 4.6px;
+            bottom: 4.6px;
+            margin-left: 4.6px;
+            background-color: #fff;
+            border-radius: 10px;
+        }
+
+        input.switch:checked~label:before {
+            background-color: #97cd76;
+        }
+
+        input.switch:checked~label:after {
+            margin-left: 33.6px;
+        }
+
+        table, td, tr, th {
+            border: none !important;
+        }
+        tr td:first-child, tr th:first-child {
+            padding-left: 0;
+        }
+        tr td:last-child, tr th:last-child {
+            padding-right: 0;
+        }
+    </style>
+    <script src="wasm_exec.js"></script>
+    <script>
+        if (!WebAssembly.instantiateStreaming) {
+            // polyfill
+            WebAssembly.instantiateStreaming = async (resp, importObject) => {
+                const source = await (await resp).arrayBuffer();
+                return await WebAssembly.instantiate(source, importObject);
+            };
+        }
+
+        const go = new Go();
+        let mod, inst;
+        WebAssembly.instantiateStreaming(fetch("lib.wasm"), go.importObject).then(async result => {
+            mod = result.module;
+            inst = result.instance;
+            await go.run(inst);
+        });
+    </script>
+
+    <section class="section">
+        <div class="container">
+            <h1 class="title">Calc</h1>
+            <h2 class="subtitle">
+                Prices and durations are just bolted on atm, can expect issues. Can expect them everywhere, really.
+            </h2>
+
+            <div class="columns">
+                <form id="form" class="column">
+                    <div class="form-container">
+                        <div class="columns">
+                            <div class="column is-two-fifths">
+                                <div class="field">
+                                    <label class="label is-small">Rsn</label>
+                                    <div class="control">
+                                        <input class="input is-small" type="text" name="rsn" required placeholder="rsn">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="column is-two-fifths">
+                                <div class="field">
+                                    <label class="label is-small">Enhancer charges</label>
+                                    <div class="control">
+                                        <input class="input is-small" type="number" name="charges" min="0" max="20000"
+                                            value="0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="column is-one-fifth">
+                                <div class="field">
+                                    <label class="label is-small">Ba progress</label>
+                                    <div class="control">
+                                        <div class="select is-fullwidth is-small">
+                                            <select name="progress">
+                                                <option value="1">NM1</option>
+                                                <option value="2">HM1</option>
+                                                <option value="3">HM6</option>
+                                                <option value="4">HM10</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="columns">
+                            <div class="column">
+                                <div class="field">
+                                    <div class="control is-two-fifths">
+                                        <input type="checkbox" class="switch" id="ironman" name="ironman">
+                                        <label for="ironman">I'm an ironman</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="column is-hidden is-three-fifths" id="tickets">
+                                <div class="field">
+                                    <label class="label is-small">Tickets</label>
+                                    <div class="control">
+                                        <input class="input is-small" type="number" name="hm10tickets" min="0"
+                                            max="1000" value="0">
+                                    </div>
+                                    <p class="help">If you have saved your ticket(s) we will use them for 6-9s and kings
+                                        when necessary. Otherwise we might have to do 1-9s first.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h5 class="title is-5">Your current points and levels</h5>
+                        <h5 class="subtitle is-6">You can check them by using the ba blackboard. Skip this step if you
+                            do not need to leech points.</h5>
+
+                        <table class="table is-fullwidth">
+                            <thead>
+                                <th>Role</th>
+                                <th>Honour Points</th>
+                                <th>Level</th>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Attacker</td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <input class="input is-small" type="number" name="hasattackerpts"
+                                                    min="0" max="5000" value="0">
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <div class="select is-fullwidth is-small">
+                                                    <select name="hasattackerlvl">
+                                                        <option value="1">1</option>
+                                                        <option value="2">2</option>
+                                                        <option value="3">3</option>
+                                                        <option value="4">4</option>
+                                                        <option value="5">5</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Defender</td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <input class="input is-small" type="number" name="hasdefenderpts"
+                                                    min="0" max="5000" value="0">
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <div class="select is-fullwidth is-small">
+                                                    <select name="hasdefenderlvl">
+                                                        <option value="1">1</option>
+                                                        <option value="2">2</option>
+                                                        <option value="3">3</option>
+                                                        <option value="4">4</option>
+                                                        <option value="5">5</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Collector</td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <input class="input is-small" type="number" name="hascollectorpts"
+                                                    min="0" max="5000" value="0">
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <div class="select is-fullwidth is-small">
+                                                    <select name="hascollectorlvl">
+                                                        <option value="1">1</option>
+                                                        <option value="2">2</option>
+                                                        <option value="3">3</option>
+                                                        <option value="4">4</option>
+                                                        <option value="5">5</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Healer</td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <input class="input is-small" type="number" name="hashealerpts" min="0"
+                                                    max="5000" value="0">
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <div class="select is-fullwidth is-small">
+                                                    <select name="hashealerlvl">
+                                                        <option value="1">1</option>
+                                                        <option value="2">2</option>
+                                                        <option value="3">3</option>
+                                                        <option value="4">4</option>
+                                                        <option value="5">5</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <hr>
+
+                        <div class="columns is-vcentered">
+                            <div class="column">
+                                <h5 class="title is-5">Queen & King Leech</h5>
+                                <h5 class="subtitle is-6">Skip this step if you do not need to leech queen or king
+                                    kills.</h5>
+                            </div>
+                            <div class="column is-one-fifth">
+                                <input type="checkbox" class="switch" id="wave10toggle" name="ironman">
+                                <label for="wave10toggle" style="float: right">&nbsp;</label>
+                            </div>
+                        </div>
+
+                        <div class="columns is-hidden" id="wave10section">
+                            <div class="column is-one-half">
+                                <div class="field">
+                                    <label class="label is-small">Queens</label>
+                                    <div class="control">
+                                        <input class="input is-small" type="number" name="queen" min="0" max="100"
+                                            value="0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="column is-one-half">
+                                <div class="field">
+                                    <label class="label is-small">Kings</label>
+                                    <div class="control">
+                                        <input class="input is-small" type="number" name="king" min="0" max="100"
+                                            value="0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="columns is-vcentered">
+                            <div class="column">
+                                <h5 class="title is-5">Points & Levels Leech</h5>
+                                <h5 class="subtitle is-6">Skip this step if you do not need to leech points.</h5>
+                            </div>
+                            <div class="column is-one-fifth">
+                                <input type="checkbox" class="switch" id="ptstoggle" name="ironman">
+                                <label for="ptstoggle" style="float: right">&nbsp;</label>
+                            </div>
+                        </div>
+
+                        <table class="table is-fullwidth is-hidden" id="ptssection">
+                            <thead>
+                                <th>Role</th>
+                                <th>I Need Level</th>
+                                <th>And Some Extra Points</th>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Attacker</td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <div class="select is-fullwidth is-small">
+                                                    <select name="wantsattackerlvl">
+                                                        <option value="1">1</option>
+                                                        <option value="2">2</option>
+                                                        <option value="3">3</option>
+                                                        <option value="4">4</option>
+                                                        <option value="5">5</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <input class="input is-small" type="number" name="wantsattackerpts"
+                                                    min="0" max="5000" value="0">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Defender</td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <div class="select is-fullwidth is-small">
+                                                    <select name="wantsdefenderlvl">
+                                                        <option value="1">1</option>
+                                                        <option value="2">2</option>
+                                                        <option value="3">3</option>
+                                                        <option value="4">4</option>
+                                                        <option value="5">5</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <input class="input is-small" type="number" name="wantsdefenderpts"
+                                                    min="0" max="5000" value="0">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Collector</td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <div class="select is-fullwidth is-small">
+                                                    <select name="wantscollectorlvl">
+                                                        <option value="1">1</option>
+                                                        <option value="2">2</option>
+                                                        <option value="3">3</option>
+                                                        <option value="4">4</option>
+                                                        <option value="5">5</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <input class="input is-small" type="number" name="wantscollectorpts"
+                                                    min="0" max="5000" value="0">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Healer</td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <div class="select is-fullwidth is-small">
+                                                    <select name="wantshealerlvl">
+                                                        <option value="1">1</option>
+                                                        <option value="2">2</option>
+                                                        <option value="3">3</option>
+                                                        <option value="4">4</option>
+                                                        <option value="5">5</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <input class="input is-small" type="number" name="wantshealerpts"
+                                                    min="0" max="5000" value="0">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <hr>
+
+
+                        <div class="columns is-vcentered">
+                            <div class="column">
+                                <h5 class="title is-5">Bonus XP Leech</h5>
+                                <h5 class="subtitle is-6">Skip this step if you do not need to leech bxp.</h5>
+                            </div>
+                            <div class="column is-one-fifth">
+                                <input type="checkbox" class="switch" id="bxptoggle" name="ironman">
+                                <label for="bxptoggle" style="float: right">&nbsp;</label>
+                            </div>
+                        </div>
+
+                        <div class="columns is-hidden" id="bxpsection">
+                            <div class="column is-one-third">
+                                <div class="field">
+                                    <label class="label is-small">Agility</label>
+                                    <div class="control">
+                                        <input class="input is-small" type="number" name="agility" min="0"
+                                            max="100000000" value="0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="column is-one-third">
+                                <div class="field">
+                                    <label class="label is-small">Firemaking</label>
+                                    <div class="control">
+                                        <input class="input is-small" type="number" name="firemaking" min="0"
+                                            max="100000000" value="0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="column is-one-third">
+                                <div class="field">
+                                    <label class="label is-small">Mining</label>
+                                    <div class="control">
+                                        <input class="input is-small" type="number" name="mining" min="0"
+                                            max="100000000" value="0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <pre id="output" class="column"></pre>
+            </div>
+        </div>
+    </section>
+
+    <script type="text/javascript">
+
+        let sectionToggles = [
+            ['#wave10toggle', '#wave10section'],
+            ['#ptstoggle', '#ptssection'],
+            ['#bxptoggle', '#bxpsection'],
+        ];
+
+        sectionToggles.forEach(pair => {
+            let toggle = document.querySelector(pair[0]);
+            let target = document.querySelector(pair[1]);
+            toggle.addEventListener('input', (e) => {
+                if (e.target.checked) {
+                    target.classList.remove('is-hidden');
+                } else {
+                    target.classList.add('is-hidden');
+                }
+            });
+        });
+
+        let form = document.querySelector('#form');
+        let output = document.querySelector('#output');
+        let ticketsColumn = document.querySelector('#tickets');
+
+        form.addEventListener('input', () => {
+            let data = new FormData(form);
+            let request = {
+                rsn: data.get("rsn") || "",
+                ironman: data.get("ironman") == "on" ? true : false,
+                progress: parseInt(data.get("progress"), 10) || 0,
+                charges: parseInt(data.get("charges"), 10) || 0,
+                pts: {
+                    attacker: parseInt(data.get("attacker"), 10) || 0,
+                    defender: parseInt(data.get("defender"), 10) || 0,
+                    healer: parseInt(data.get("healer"), 10) || 0,
+                    collector: parseInt(data.get("collector"), 10) || 0,
+                },
+                bxp: {
+                    agility: parseInt(data.get("agility"), 10) || 0,
+                    firemaking: parseInt(data.get("firemaking"), 10) || 0,
+                    mining: parseInt(data.get("mining"), 10) || 0,
+                },
+                queen: parseInt(data.get("queen"), 10) || 0,
+                king: parseInt(data.get("king"), 10) || 0,
+                hm10tickets: parseInt(data.get("hm10tickets"), 10) || 0,
+            };
+
+            if (request.ironman && request.progress === 4) {
+                ticketsColumn.classList.remove('is-hidden');
+            } else {
+                ticketsColumn.classList.add('is-hidden');
+                tickets.querySelector('input').value = 0;
+                request.hm10tickets = 0;
+            }
+
+            form.querySelectorAll('input, select').forEach(e => {
+                e.classList.remove('is-danger');
+                e.classList.remove('is-success');
+
+                if (e.checkValidity()) {
+                    e.classList.add('is-success');
+                } else {
+                    e.classList.add('is-danger');
+                }
+            });
+
+            if (form.checkValidity()) {
+                output.textContent = process(request);
+            } else {
+                output.textContent = "";
+            }
+        });
+    </script>
+</body>
+
+</html>
