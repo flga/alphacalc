@@ -85,6 +85,13 @@ license that can be found in the LICENSE file.
         tr th:last-child {
             padding-right: 0;
         }
+
+        #wave10header,
+        #ptsheader,
+        #bxpheader {
+            cursor: pointer;
+            user-select: none;
+        }
     </style>
     <script src="wasm_exec.js"></script>
     <script>
@@ -294,7 +301,7 @@ license that can be found in the LICENSE file.
 
                         <hr>
 
-                        <div class="columns is-vcentered">
+                        <div class="columns is-vcentered" id="wave10header">
                             <div class="column">
                                 <h5 class="title is-5">Queen & King Leech</h5>
                                 <h5 class="subtitle is-6">Skip this step if you do not need to leech queen or king
@@ -330,7 +337,7 @@ license that can be found in the LICENSE file.
 
                         <hr>
 
-                        <div class="columns is-vcentered">
+                        <div class="columns is-vcentered" id="ptsheader">
                             <div class="column">
                                 <h5 class="title is-5">Points & Levels Leech</h5>
                                 <h5 class="subtitle is-6">Skip this step if you do not need to leech points.</h5>
@@ -458,7 +465,7 @@ license that can be found in the LICENSE file.
                         <hr>
 
 
-                        <div class="columns is-vcentered">
+                        <div class="columns is-vcentered" id="bxpheader">
                             <div class="column">
                                 <h5 class="title is-5">Bonus XP Leech</h5>
                                 <h5 class="subtitle is-6">Skip this step if you do not need to leech bxp.</h5>
@@ -516,18 +523,29 @@ license that can be found in the LICENSE file.
 
         // for toggling the leech sections
         let sectionToggles = [
-            ['#wave10toggle', '#wave10section'],
-            ['#ptstoggle', '#ptssection'],
-            ['#bxptoggle', '#bxpsection'],
+            ['#wave10toggle', '#wave10section', '#wave10header'],
+            ['#ptstoggle', '#ptssection', '#ptsheader'],
+            ['#bxptoggle', '#bxpsection', '#bxpheader'],
         ];
         sectionToggles.forEach(pair => {
             let toggle = document.querySelector(pair[0]);
             let target = document.querySelector(pair[1]);
+            let header = document.querySelector(pair[2]);
             toggle.addEventListener('input', (e) => {
                 if (e.target.checked) {
                     target.classList.remove('is-hidden');
                 } else {
                     target.classList.add('is-hidden');
+                }
+            });
+
+            header.addEventListener('click', () => {
+                if (toggle.checked) {
+                    toggle.checked = false;
+                    target.classList.add('is-hidden');
+                } else {
+                    toggle.checked = true;
+                    target.classList.remove('is-hidden');
                 }
             });
         });
