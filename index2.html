@@ -69,13 +69,20 @@ license that can be found in the LICENSE file.
             margin-left: 33.6px;
         }
 
-        table, td, tr, th {
+        table,
+        td,
+        tr,
+        th {
             border: none !important;
         }
-        tr td:first-child, tr th:first-child {
+
+        tr td:first-child,
+        tr th:first-child {
             padding-left: 0;
         }
-        tr td:last-child, tr th:last-child {
+
+        tr td:last-child,
+        tr th:last-child {
             padding-right: 0;
         }
     </style>
@@ -294,7 +301,7 @@ license that can be found in the LICENSE file.
                                     kills.</h5>
                             </div>
                             <div class="column is-one-fifth">
-                                <input type="checkbox" class="switch" id="wave10toggle" name="ironman">
+                                <input type="checkbox" class="switch" id="wave10toggle">
                                 <label for="wave10toggle" style="float: right">&nbsp;</label>
                             </div>
                         </div>
@@ -329,7 +336,7 @@ license that can be found in the LICENSE file.
                                 <h5 class="subtitle is-6">Skip this step if you do not need to leech points.</h5>
                             </div>
                             <div class="column is-one-fifth">
-                                <input type="checkbox" class="switch" id="ptstoggle" name="ironman">
+                                <input type="checkbox" class="switch" id="ptstoggle">
                                 <label for="ptstoggle" style="float: right">&nbsp;</label>
                             </div>
                         </div>
@@ -457,7 +464,7 @@ license that can be found in the LICENSE file.
                                 <h5 class="subtitle is-6">Skip this step if you do not need to leech bxp.</h5>
                             </div>
                             <div class="column is-one-fifth">
-                                <input type="checkbox" class="switch" id="bxptoggle" name="ironman">
+                                <input type="checkbox" class="switch" id="bxptoggle">
                                 <label for="bxptoggle" style="float: right">&nbsp;</label>
                             </div>
                         </div>
@@ -502,13 +509,17 @@ license that can be found in the LICENSE file.
     </section>
 
     <script type="text/javascript">
+        function lvlDiff(hasLvl, wantsLvl, hasPts) {
+            const pts = [0, 200, 500, 900, 1400];
+            return Math.max(pts[wantsLvl - 1] - (pts[hasLvl - 1] + hasPts), 0);
+        }
 
+        // for toggling the leech sections
         let sectionToggles = [
             ['#wave10toggle', '#wave10section'],
             ['#ptstoggle', '#ptssection'],
             ['#bxptoggle', '#bxpsection'],
         ];
-
         sectionToggles.forEach(pair => {
             let toggle = document.querySelector(pair[0]);
             let target = document.querySelector(pair[1]);
@@ -523,39 +534,49 @@ license that can be found in the LICENSE file.
 
         let form = document.querySelector('#form');
         let output = document.querySelector('#output');
-        let ticketsColumn = document.querySelector('#tickets');
-
         form.addEventListener('input', () => {
-            let data = new FormData(form);
-            let request = {
-                rsn: data.get("rsn") || "",
-                ironman: data.get("ironman") == "on" ? true : false,
-                progress: parseInt(data.get("progress"), 10) || 0,
-                charges: parseInt(data.get("charges"), 10) || 0,
-                pts: {
-                    attacker: parseInt(data.get("attacker"), 10) || 0,
-                    defender: parseInt(data.get("defender"), 10) || 0,
-                    healer: parseInt(data.get("healer"), 10) || 0,
-                    collector: parseInt(data.get("collector"), 10) || 0,
-                },
-                bxp: {
-                    agility: parseInt(data.get("agility"), 10) || 0,
-                    firemaking: parseInt(data.get("firemaking"), 10) || 0,
-                    mining: parseInt(data.get("mining"), 10) || 0,
-                },
-                queen: parseInt(data.get("queen"), 10) || 0,
-                king: parseInt(data.get("king"), 10) || 0,
-                hm10tickets: parseInt(data.get("hm10tickets"), 10) || 0,
-            };
+            // keep "wants lvl" in sync with "has lvl"
+            let lvlPairs = [
+                ['wantsattackerlvl', 'hasattackerlvl'],
+                ['wantsdefenderlvl', 'hasdefenderlvl'],
+                ['wantscollectorlvl', 'hascollectorlvl'],
+                ['wantshealerlvl', 'hashealerlvl'],
+            ];
+            lvlPairs.forEach(pair => {
+                let wantsNode = form.querySelector('select[name=' + pair[0] + ']');
+                let hasNode = form.querySelector('select[name=' + pair[1] + ']');
 
-            if (request.ironman && request.progress === 4) {
-                ticketsColumn.classList.remove('is-hidden');
+                let wants = parseInt(wantsNode.value, 10) || 1;
+                let has = parseInt(hasNode.value, 10) || 1;
+
+                if (wants < has) {
+                    wantsNode.value = hasNode.value;
+                }
+            });
+
+            // disable bxp if ironman
+            if (form.querySelector('input[name=ironman]').checked) {
+                form.querySelector('input[name=agility]').value = 0;
+                form.querySelector('input[name=agility]').disabled = true;
+                form.querySelector('input[name=firemaking]').value = 0;
+                form.querySelector('input[name=firemaking]').disabled = true;
+                form.querySelector('input[name=mining]').value = 0;
+                form.querySelector('input[name=mining]').disabled = true;
             } else {
-                ticketsColumn.classList.add('is-hidden');
-                tickets.querySelector('input').value = 0;
-                request.hm10tickets = 0;
+                form.querySelector('input[name=agility]').disabled = false;
+                form.querySelector('input[name=firemaking]').disabled = false;
+                form.querySelector('input[name=mining]').disabled = false;
             }
 
+            // disable tickets if not ironman && hm10
+            if (form.querySelector('input[name=ironman]').checked && form.querySelector('select[name=progress]').value === "4") {
+                document.querySelector('#tickets').classList.remove('is-hidden');
+            } else {
+                document.querySelector('#tickets').classList.add('is-hidden');
+                tickets.querySelector('input').value = 0;
+            }
+
+            // apply validation styles
             form.querySelectorAll('input, select').forEach(e => {
                 e.classList.remove('is-danger');
                 e.classList.remove('is-success');
@@ -566,6 +587,54 @@ license that can be found in the LICENSE file.
                     e.classList.add('is-danger');
                 }
             });
+
+            let data = new FormData(form);
+
+            let hasattackerlvl = parseInt(data.get('hasattackerlvl'), 10) || 1;
+            let hasdefenderlvl = parseInt(data.get('hasdefenderlvl'), 10) || 1;
+            let hascollectorlvl = parseInt(data.get('hascollectorlvl'), 10) || 1;
+            let hashealerlvl = parseInt(data.get('hashealerlvl'), 10) || 1;
+
+            let hasattackerpts = parseInt(data.get('hasattackerpts'), 10) || 0;
+            let hasdefenderpts = parseInt(data.get('hasdefenderpts'), 10) || 0;
+            let hascollectorpts = parseInt(data.get('hascollectorpts'), 10) || 0;
+            let hashealerpts = parseInt(data.get('hashealerpts'), 10) || 0;
+
+            let wantsattackerlvl = parseInt(data.get('wantsattackerlvl'), 10) || 1;
+            let wantsdefenderlvl = parseInt(data.get('wantsdefenderlvl'), 10) || 1;
+            let wantscollectorlvl = parseInt(data.get('wantscollectorlvl'), 10) || 1;
+            let wantshealerlvl = parseInt(data.get('wantshealerlvl'), 10) || 1;
+
+            let wantsattackerpts = parseInt(data.get('wantsattackerpts'), 10) || 0;
+            let wantsdefenderpts = parseInt(data.get('wantsdefenderpts'), 10) || 0;
+            let wantscollectorpts = parseInt(data.get('wantscollectorpts'), 10) || 0;
+            let wantshealerpts = parseInt(data.get('wantshealerpts'), 10) || 0;
+
+            let needsattackerpts = wantsattackerpts + lvlDiff(hasattackerlvl, wantsattackerlvl, hasattackerpts);
+            let needsdefenderpts = wantsdefenderpts + lvlDiff(hasdefenderlvl, wantsdefenderlvl, hasdefenderpts);
+            let needscollectorpts = wantscollectorpts + lvlDiff(hascollectorlvl, wantscollectorlvl, hascollectorpts);
+            let needshealerpts = wantshealerpts + lvlDiff(hashealerlvl, wantshealerlvl, hashealerpts);
+
+            let request = {
+                rsn: data.get("rsn") || "",
+                ironman: data.get("ironman") == "on" ? true : false,
+                progress: parseInt(data.get("progress"), 10) || 0,
+                charges: parseInt(data.get("charges"), 10) || 0,
+                pts: {
+                    attacker: needsattackerpts,
+                    defender: needsdefenderpts,
+                    healer: needshealerpts,
+                    collector: needscollectorpts,
+                },
+                bxp: {
+                    agility: parseInt(data.get("agility"), 10) || 0,
+                    firemaking: parseInt(data.get("firemaking"), 10) || 0,
+                    mining: parseInt(data.get("mining"), 10) || 0,
+                },
+                queen: parseInt(data.get("queen"), 10) || 0,
+                king: parseInt(data.get("king"), 10) || 0,
+                hm10tickets: parseInt(data.get("hm10tickets"), 10) || 0,
+            };
 
             if (form.checkValidity()) {
                 output.textContent = process(request);
