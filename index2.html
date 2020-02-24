@@ -65,6 +65,10 @@ license that can be found in the LICENSE file.
             background-color: #97cd76;
         }
 
+        input.switch:disabled~label:before {
+            background-color: #cccccc;
+        }
+
         input.switch:checked~label:after {
             margin-left: 33.6px;
         }
@@ -351,8 +355,9 @@ license that can be found in the LICENSE file.
                         <table class="table is-fullwidth is-hidden" id="ptssection">
                             <thead>
                                 <th>Role</th>
-                                <th>I Need Level</th>
-                                <th>And Some Extra Points</th>
+                                <th>I need level</th>
+                                <th>And some extra points</th>
+                                <th>Points I will gain</th>
                             </thead>
                             <tbody>
                                 <tr>
@@ -377,6 +382,13 @@ license that can be found in the LICENSE file.
                                             <div class="control">
                                                 <input class="input is-small" type="number" name="wantsattackerpts"
                                                     min="0" max="5000" value="0">
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <input class="input is-small is-static" type="text" name="needsattackerpts" value="0">
                                             </div>
                                         </div>
                                     </td>
@@ -406,6 +418,13 @@ license that can be found in the LICENSE file.
                                             </div>
                                         </div>
                                     </td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <input class="input is-small is-static" type="text" name="needsdefenderpts" value="0">
+                                            </div>
+                                        </div>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td>Collector</td>
@@ -432,6 +451,13 @@ license that can be found in the LICENSE file.
                                             </div>
                                         </div>
                                     </td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <input class="input is-small is-static" type="text" name="needscollectorpts" value="0">
+                                            </div>
+                                        </div>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td>Healer</td>
@@ -455,6 +481,13 @@ license that can be found in the LICENSE file.
                                             <div class="control">
                                                 <input class="input is-small" type="number" name="wantshealerpts"
                                                     min="0" max="5000" value="0">
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="field">
+                                            <div class="control">
+                                                <input class="input is-small is-static" type="text" name="needshealerpts" value="0">
                                             </div>
                                         </div>
                                     </td>
@@ -532,6 +565,10 @@ license that can be found in the LICENSE file.
             let target = document.querySelector(pair[1]);
             let header = document.querySelector(pair[2]);
             toggle.addEventListener('input', (e) => {
+                if (toggle.disabled) {
+                    return;
+                }
+
                 if (e.target.checked) {
                     target.classList.remove('is-hidden');
                 } else {
@@ -540,6 +577,10 @@ license that can be found in the LICENSE file.
             });
 
             header.addEventListener('click', () => {
+                if (toggle.disabled) {
+                    return;
+                }
+
                 if (toggle.checked) {
                     toggle.checked = false;
                     target.classList.add('is-hidden');
@@ -552,6 +593,37 @@ license that can be found in the LICENSE file.
 
         let form = document.querySelector('#form');
         let output = document.querySelector('#output');
+
+        // disable bxp if ironman
+        form.querySelector('input[name=ironman]').addEventListener('input', (e) => {
+            let agility = form.querySelector('input[name=agility]');
+            let firemaking = form.querySelector('input[name=firemaking]');
+            let mining = form.querySelector('input[name=mining]');
+
+            let bxpSection = sectionToggles[2];
+            let toggle = document.querySelector(bxpSection[0]);
+            let section = document.querySelector(bxpSection[1]);
+
+            if (e.target.checked) {
+                agility.value = 0;
+                firemaking.value = 0;
+                mining.value = 0;
+                agility.disabled = true;
+                firemaking.disabled = true;
+                mining.disabled = true;
+
+                toggle.checked = false;
+                toggle.disabled = true;
+                section.classList.add('is-hidden');
+            } else {
+                agility.disabled = false;
+                firemaking.disabled = false;
+                mining.disabled = false;
+
+                toggle.disabled = false;
+            }
+        });
+
         form.addEventListener('input', () => {
             // keep "wants lvl" in sync with "has lvl"
             let lvlPairs = [
@@ -571,20 +643,6 @@ license that can be found in the LICENSE file.
                     wantsNode.value = hasNode.value;
                 }
             });
-
-            // disable bxp if ironman
-            if (form.querySelector('input[name=ironman]').checked) {
-                form.querySelector('input[name=agility]').value = 0;
-                form.querySelector('input[name=agility]').disabled = true;
-                form.querySelector('input[name=firemaking]').value = 0;
-                form.querySelector('input[name=firemaking]').disabled = true;
-                form.querySelector('input[name=mining]').value = 0;
-                form.querySelector('input[name=mining]').disabled = true;
-            } else {
-                form.querySelector('input[name=agility]').disabled = false;
-                form.querySelector('input[name=firemaking]').disabled = false;
-                form.querySelector('input[name=mining]').disabled = false;
-            }
 
             // disable tickets if not ironman && hm10
             if (form.querySelector('input[name=ironman]').checked && form.querySelector('select[name=progress]').value === "4") {
@@ -607,6 +665,7 @@ license that can be found in the LICENSE file.
             });
 
             let data = new FormData(form);
+
 
             let hasattackerlvl = parseInt(data.get('hasattackerlvl'), 10) || 1;
             let hasdefenderlvl = parseInt(data.get('hasdefenderlvl'), 10) || 1;
@@ -632,6 +691,22 @@ license that can be found in the LICENSE file.
             let needsdefenderpts = wantsdefenderpts + lvlDiff(hasdefenderlvl, wantsdefenderlvl, hasdefenderpts);
             let needscollectorpts = wantscollectorpts + lvlDiff(hascollectorlvl, wantscollectorlvl, hascollectorpts);
             let needshealerpts = wantshealerpts + lvlDiff(hashealerlvl, wantshealerlvl, hashealerpts);
+
+            form.querySelector('input[name=needsattackerpts]').value = needsattackerpts;
+            form.querySelector('input[name=needsdefenderpts]').value = needsdefenderpts;
+            form.querySelector('input[name=needscollectorpts]').value = needscollectorpts;
+            form.querySelector('input[name=needshealerpts]').value = needshealerpts;
+
+            // if the leech needs pts, don't let him hide the pts section, and show it if it's hidden.
+            let ptsToggle = document.querySelector('#ptstoggle');
+            if (needsattackerpts || needsdefenderpts || needscollectorpts || needshealerpts) {
+                if (!ptsToggle.checked) {
+                    document.querySelector('label[for=ptstoggle]').click();
+                }
+                ptsToggle.disabled = true;
+            } else {
+                ptsToggle.disabled = false;
+            }
 
             let request = {
                 rsn: data.get("rsn") || "",
