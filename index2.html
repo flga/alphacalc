@@ -111,6 +111,7 @@ license that can be found in the LICENSE file.
 
         #blackboard {
             margin-top: 1.5rem;
+            cursor: pointer;
         }
 
         .level:not(:last-child) {
@@ -278,9 +279,11 @@ license that can be found in the LICENSE file.
 
                             <table class="table is-fullwidth">
                                 <thead>
-                                    <th>Role</th>
-                                    <th>Current Honour Points</th>
-                                    <th>Level</th>
+                                    <th style="width: 15%">Role</th>
+                                    <th style="width: 20%">Current Points</th>
+                                    <th style="width: 12%; min-width: 70px;">Level</th>
+                                    <th style="width: 35%">Reward next level</th>
+                                    <th style="width: 18%">Points next level</th>
                                 </thead>
                                 <tbody>
                                     <tr>
@@ -308,6 +311,8 @@ license that can be found in the LICENSE file.
                                                 </div>
                                             </div>
                                         </td>
+                                        <td class="attacker-blackboard-next"></td>
+                                        <td class="attacker-blackboard-pts"></td>
                                     </tr>
                                     <tr>
                                         <td>Defender</td>
@@ -334,6 +339,8 @@ license that can be found in the LICENSE file.
                                                 </div>
                                             </div>
                                         </td>
+                                        <td class="defender-blackboard-next"></td>
+                                        <td class="defender-blackboard-pts"></td>
                                     </tr>
                                     <tr>
                                         <td>Collector</td>
@@ -360,6 +367,8 @@ license that can be found in the LICENSE file.
                                                 </div>
                                             </div>
                                         </td>
+                                        <td class="collector-blackboard-next"></td>
+                                        <td class="collector-blackboard-pts"></td>
                                     </tr>
                                     <tr>
                                         <td>Healer</td>
@@ -386,6 +395,8 @@ license that can be found in the LICENSE file.
                                                 </div>
                                             </div>
                                         </td>
+                                        <td class="healer-blackboard-next"></td>
+                                        <td class="healer-blackboard-pts"></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -592,7 +603,7 @@ license that can be found in the LICENSE file.
                 <div class="column has-text-centered" id="order">
                     <h5 class="title is-4 request-title">Your order</h5>
                     <h5 class="subtitle is-6">Based on what you've told us, this is what you need.</h5>
-                    <div class="columns">
+                    <div class="columns is-mobile">
                         <div class="column">
                             <p class="heading">Attacker</p>
                             <p class="title attacker">0</p>
@@ -618,7 +629,7 @@ license that can be found in the LICENSE file.
                             <p class="title king">0</p>
                         </div>
                     </div>
-                    <div class="columns bxp">
+                    <div class="columns is-mobile bxp">
                         <div class="column">
                             <p class="heading">Agility</p>
                             <p class="title agility">0</p>
@@ -632,7 +643,8 @@ license that can be found in the LICENSE file.
                             <p class="title mining">0</p>
                         </div>
                     </div>
-                    <button id="requestBtn" class="button is-primary is-fullwidth is-outlined" disabled>Request Leech</button>
+                    <button id="requestBtn" class="button is-primary is-fullwidth is-outlined" disabled>Request
+                        Leech</button>
 
                     <pre id="output"></pre>
                 </div>
@@ -666,7 +678,50 @@ license that can be found in the LICENSE file.
             return buf;
         }
 
+        function updateBlackboard(form) {
+            let attackerBlackboardData = [
+                { next: '+200 bonus damage', pts: '200' },
+                { next: '+300 bonus damage', pts: '300' },
+                { next: '+400 bonus damage', pts: '400' },
+                { next: '+500 bonus damage', pts: '500' },
+                { next: '- Mastered -', pts: '---' },
+            ];
+            let defenderBlackboardData = [
+                { next: 'Bonus logs 1', pts: '200' },
+                { next: 'Bonus logs 2', pts: '300' },
+                { next: 'Bonus logs 3', pts: '400' },
+                { next: 'Bonus logs 4', pts: '500' },
+                { next: '- Mastered -', pts: '---' },
+            ];
+            let collectorBlackboardData = [
+                { next: 'Egg convert success 70%', pts: '200' },
+                { next: 'Egg convert success 80%', pts: '300' },
+                { next: 'Egg convert success 90%', pts: '400' },
+                { next: 'Egg convert success 100%', pts: '500' },
+                { next: '- Mastered -', pts: '---' },
+            ];
+            let healerBlackboardData = [
+                { next: 'Heal 25% life points', pts: '200' },
+                { next: 'Heal 40% life points', pts: '300' },
+                { next: 'Heal 45% life points', pts: '400' },
+                { next: 'Heal 50% life points', pts: '500' },
+                { next: '- Mastered -', pts: '---' },
+            ];
+
+            document.querySelector('.attacker-blackboard-next').textContent = attackerBlackboardData[asInt(form.hasattackerlvl.value, 1) - 1].next;
+            document.querySelector('.attacker-blackboard-pts').textContent = attackerBlackboardData[asInt(form.hasattackerlvl.value, 1) - 1].pts;
+            document.querySelector('.defender-blackboard-next').textContent = defenderBlackboardData[asInt(form.hasdefenderlvl.value, 1) - 1].next;
+            document.querySelector('.defender-blackboard-pts').textContent = defenderBlackboardData[asInt(form.hasdefenderlvl.value, 1) - 1].pts;
+            document.querySelector('.collector-blackboard-next').textContent = collectorBlackboardData[asInt(form.hascollectorlvl.value, 1) - 1].next;
+            document.querySelector('.collector-blackboard-pts').textContent = collectorBlackboardData[asInt(form.hascollectorlvl.value, 1) - 1].pts;
+            document.querySelector('.healer-blackboard-next').textContent = healerBlackboardData[asInt(form.hashealerlvl.value, 1) - 1].next;
+            document.querySelector('.healer-blackboard-pts').textContent = healerBlackboardData[asInt(form.hashealerlvl.value, 1) - 1].pts;
+        }
+
         document.querySelector('#blackboard-toggle').addEventListener('click', () => {
+            document.querySelector('#blackboard').classList.toggle('is-hidden');
+        });
+        document.querySelector('#blackboard').addEventListener('click', () => {
             document.querySelector('#blackboard').classList.toggle('is-hidden');
         });
 
@@ -806,6 +861,8 @@ license that can be found in the LICENSE file.
             }
         });
 
+        updateBlackboard(form);
+
         formRoot.addEventListener('input', () => {
             // keep "wants lvl" in sync with "has lvl"
             if (asInt(form.hasattackerlvl.value, 1) > asInt(form.wantsattackerlvl.value)) {
@@ -820,6 +877,9 @@ license that can be found in the LICENSE file.
             if (asInt(form.hashealerlvl.value, 1) > asInt(form.wantshealerlvl.value)) {
                 form.wantshealerlvl.value = form.hashealerlvl.value;
             }
+
+            // update blackboard
+            updateBlackboard(form);
 
             // disable tickets if not ironman && hm10
             if (form.ironman.checked && form.progress.value === "4") {
