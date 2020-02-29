@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<!--
+Copyright 2018 The Go Authors. All rights reserved.
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file.
+-->
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>lba calc</title>
+</head>
+
+<body>
+    <link rel="stylesheet" href="assets/bulma.css">
+    <style>
+        input.switch:empty {
+            opacity: 0;
+        }
+
+        input.switch:empty~label {
+            position: relative;
+            float: left;
+            line-height: 25.6px;
+            text-indent: 64px;
+            margin: 3.2px 0;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            font-size: 16px !important;
+        }
+
+        input.switch:empty~label:before,
+        input.switch:empty~label:after {
+            position: absolute;
+            display: block;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            content: ' ';
+            width: 3.6em;
+            background-color: #ed6c63;
+            border-radius: 50px;
+            -webkit-transition: all 100ms ease-in;
+            transition: all 100ms ease-in;
+        }
+
+        input.switch:focus~label:before {
+            box-shadow: 0px 0px 5px 0px #3273dc;
+        }
+
+        input.switch:empty~label:after {
+            width: 16.4px;
+            top: 4.6px;
+            bottom: 4.6px;
+            margin-left: 4.6px;
+            background-color: #fff;
+            border-radius: 10px;
+        }
+
+        input.switch:checked~label:before {
+            background-color: #97cd76;
+        }
+
+        input.switch:disabled~label:before {
+            background-color: #cccccc;
+        }
+
+        input.switch:checked~label:after {
+            margin-left: 33.6px;
+        }
+
+        table,
+        td,
+        tr,
+        th {
+            border: none !important;
+        }
+
+        tr td:first-child,
+        tr th:first-child {
+            padding-left: 0;
+        }
+
+        tr td:last-child,
+        tr th:last-child {
+            padding-right: 0;
+        }
+
+        #compheader,
+        #ptsheader,
+        #itemsheader,
+        #bxpheader {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #blackboard-toggle {
+            text-decoration: underline;
+            text-decoration-style: dashed;
+            text-underline-position: under;
+            cursor: pointer;
+            color: #ed6c63;
+        }
+
+        #blackboard {
+            margin-top: 1.5rem;
+            cursor: pointer;
+        }
+
+        .level:not(:last-child) {
+            margin-bottom: 1.5rem;
+        }
+
+        #order .title {
+            font-size: 1.2rem;
+        }
+
+        #output {
+            margin-top: 1.5rem;
+            text-align: left;
+        }
+    </style>
+    <script src="assets/wasm_exec.js"></script>
+    <script>
+        if (!WebAssembly.instantiateStreaming) {
+            // polyfill
+            WebAssembly.instantiateStreaming = async (resp, importObject) => {
+                const source = await (await resp).arrayBuffer();
+                return await WebAssembly.instantiate(source, importObject);
+            };
+        }
+
+        const go = new Go();
+        let mod, inst;
+        WebAssembly.instantiateStreaming(fetch("assets/lib.wasm"), go.importObject).then(async result => {
+            mod = result.module;
+            inst = result.instance;
+            await go.run(inst);
+        });
+    </script>
+
+    <section class="section">
+        <div class="container">
+            <h1 class="title">Calc</h1>
+            <h2 class="subtitle">
+                Prices and durations are just bolted on atm, can expect issues. Can expect them everywhere, really.
+            </h2>
+
+            <div class="columns">
+                <form id="form" class="column">
+                    <div class="form-container">
+                        <div class="columns">
+                            <div class="column is-two-fifths">
+                                <div class="field">
+                                    <label class="label is-small">Rsn</label>
+                                    <div class="control">
+                                        <input class="input is-small" type="text" name="rsn" required placeholder="rsn">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="column is-two-fifths">
+                                <div class="field">
+                                    <label class="label is-small">Enhancer charges</label>
+                                    <div class="control">
+                                        <input class="input is-small" type="number" name="charges" min="0" max="20000"
+                                            value="0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="column is-one-fifth">
+                                <div class="field">
+                                    <label class="label is-small">Ba progress</label>
+                                    <div class="control">
+                                        <div class="select is-fullwidth is-small">
+                                            <select name="progress">
+                                                <option value="1">NM1</option>
+                                                <option value="2">HM1</option>
+                                                <option value="3">HM6</option>
+                                                <option value="4">HM10</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="columns">
+                            <div class="column">
+                                <div class="field">
+                                    <div class="control is-two-fifths">
+                                        <input type="checkbox" class="switch" id="ironman" name="ironman">
+                                        <label for="ironman">I'm an ironman</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="column is-hidden is-three-fifths" id="tickets">
+                                <div class="field">
+                                    <label class="label is-small">Tickets</label>
+                                    <div class="control">
+                                        <input class="input is-small" type="number" name="hm10tickets" min="0"
+                                            max="1000" value="0">
+                                    </div>
+                                    <p class="help">If you have saved your ticket(s) we will use them for 6-9s and kings
+                                        when necessary. Otherwise we might have to do 1-9s first.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="columns">
+                            <div class="column">
+                                <h5 class="title is-5">Your current points and levels</h5>
+                                <h5 class="subtitle is-6">Skip this step if you do not need points.</h5>
+
+                                <p>You can use the <span id="blackboard-toggle">blackboard</span> in Barbarian
+                                    Assault, upstairs, right next to the bank and ladder.</p>
+                                <p>Click it and fill in the info as it is layed out in the board.</p>
+
+                                <figure id="blackboard" class="image is-hidden">
+                                    <img src="assets/blackboard.png" alt="blackboard.png" />
+                                </figure>
+                                <br>
+
+                                <table class="table is-fullwidth">
+                                    <thead>
+                                        <th style="width: 15%">Role</th>
+                                        <th style="width: 20%">Current Points</th>
+                                        <th style="width: 12%; min-width: 70px;">Level</th>
+                                        <th style="width: 35%">Reward next level</th>
+                                        <th style="width: 18%">Points next level</th>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Attacker</td>
+                                            <td>
+                                                <div class="field">
+                                                    <div class="control">
+                                                        <input class="input is-small" type="number"
+                                                            name="hasattackerpts" min="0" max="5000" value="0">
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="field">
+                                                    <div class="control">
+                                                        <div class="select is-fullwidth is-small">
+                                                            <select name="hasattackerlvl">
+                                                                <option value="1">1</option>
+                                                                <option value="2">2</option>
+                                                                <option value="3">3</option>
+                                                                <option value="4">4</option>
+                                                                <option value="5">5</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="attacker-blackboard-next"></td>
+                                            <td class="attacker-blackboard-pts"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Defender</td>
+                                            <td>
+                                                <div class="field">
+                                                    <div class="control">
+                                                        <input class="input is-small" type="number"
+                                                            name="hasdefenderpts" min="0" max="5000" value="0">
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="field">
+                                                    <div class="control">
+                                                        <div class="select is-fullwidth is-small">
+                                                            <select name="hasdefenderlvl">
+                                                                <option value="1">1</option>
+                                                                <option value="2">2</option>
+                                                                <option value="3">3</option>
+                                                                <option value="4">4</option>
+                                                                <option value="5">5</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="defender-blackboard-next"></td>
+                                            <td class="defender-blackboard-pts"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Collector</td>
+                                            <td>
+                                                <div class="field">
+                                                    <div class="control">
+                                                        <input class="input is-small" type="number"
+                                                            name="hascollectorpts" min="0" max="5000" value="0">
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="field">
+                                                    <div class="control">
+                                                        <div class="select is-fullwidth is-small">
+                                                            <select name="hascollectorlvl">
+                                                                <option value="1">1</option>
+                                                                <option value="2">2</option>
+                                                                <option value="3">3</option>
+                                                                <option value="4">4</option>
+                                                                <option value="5">5</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="collector-blackboard-next"></td>
+                                            <td class="collector-blackboard-pts"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Healer</td>
+                                            <td>
+                                                <div class="field">
+                                                    <div class="control">
+                                                        <input class="input is-small" type="number" name="hashealerpts"
+                                                            min="0" max="5000" value="0">
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="field">
+                                                    <div class="control">
+                                                        <div class="select is-fullwidth is-small">
+                                                            <select name="hashealerlvl">
+                                                                <option value="1">1</option>
+                                                                <option value="2">2</option>
+                                                                <option value="3">3</option>
+                                                                <option value="4">4</option>
+                                                                <option value="5">5</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="healer-blackboard-next"></td>
+                                            <td class="healer-blackboard-pts"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="columns is-vcentered" id="compheader">
+                            <div class="column">
+                                <h5 class="title is-5">Comp Req / Hardmode unlock</h5>
+                                <h5 class="subtitle is-6">If you toggle it, it will add a queen kill to your request if
+                                    necessary (TODO: copy)</h5>
+                            </div>
+                            <div class="column is-one-fifth">
+                                <input type="checkbox" class="switch" name="comp" id="comptoggle">
+                                <label for="comptoggle" style="float: right">&nbsp;</label>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="columns is-vcentered" id="ptsheader">
+                            <div class="column">
+                                <h5 class="title is-5">Points & Levels Leech / Trim Req</h5>
+                                <h5 class="subtitle is-6">Skip this step if you do not need to leech points.</h5>
+                            </div>
+                            <div class="column is-one-fifth">
+                                <input type="checkbox" class="switch" id="ptstoggle">
+                                <label for="ptstoggle" style="float: right">&nbsp;</label>
+                            </div>
+                        </div>
+
+                        <div id="ptssection" class="is-hidden">
+                            <p>For the trim requirement you need level 5 in all roles, and a king kill.</p>
+
+                            <table class="table is-fullwidth">
+                                <thead>
+                                    <th>Role</th>
+                                    <th>I need level</th>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Attacker</td>
+                                        <td>
+                                            <div class="field">
+                                                <div class="control">
+                                                    <div class="select is-fullwidth is-small">
+                                                        <select name="wantsattackerlvl">
+                                                            <option value="1">1</option>
+                                                            <option value="2">2</option>
+                                                            <option value="3">3</option>
+                                                            <option value="4">4</option>
+                                                            <option value="5">5</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Defender</td>
+                                        <td>
+                                            <div class="field">
+                                                <div class="control">
+                                                    <div class="select is-fullwidth is-small">
+                                                        <select name="wantsdefenderlvl">
+                                                            <option value="1">1</option>
+                                                            <option value="2">2</option>
+                                                            <option value="3">3</option>
+                                                            <option value="4">4</option>
+                                                            <option value="5">5</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Collector</td>
+                                        <td>
+                                            <div class="field">
+                                                <div class="control">
+                                                    <div class="select is-fullwidth is-small">
+                                                        <select name="wantscollectorlvl">
+                                                            <option value="1">1</option>
+                                                            <option value="2">2</option>
+                                                            <option value="3">3</option>
+                                                            <option value="4">4</option>
+                                                            <option value="5">5</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Healer</td>
+                                        <td>
+                                            <div class="field">
+                                                <div class="control">
+                                                    <div class="select is-fullwidth is-small">
+                                                        <select name="wantshealerlvl">
+                                                            <option value="1">1</option>
+                                                            <option value="2">2</option>
+                                                            <option value="3">3</option>
+                                                            <option value="4">4</option>
+                                                            <option value="5">5</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="field">
+                                <div class="control">
+                                    <input type="checkbox" class="switch" id="trimking" name="trimking">
+                                    <label for="trimking">I also need a king kill</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="columns is-vcentered" id="bxpheader">
+                            <div class="column">
+                                <h5 class="title is-5">Bonus XP Leech</h5>
+                                <h5 class="subtitle is-6">Skip this step if you do not need to leech bxp.</h5>
+                            </div>
+                            <div class="column is-one-fifth">
+                                <input type="checkbox" class="switch" id="bxptoggle">
+                                <label for="bxptoggle" style="float: right">&nbsp;</label>
+                            </div>
+                        </div>
+
+                        <div class="columns is-hidden" id="bxpsection">
+                            <div class="column is-one-third">
+                                <div class="field">
+                                    <label class="label is-small">Agility</label>
+                                    <div class="control">
+                                        <input class="input is-small" type="number" name="agility" min="0"
+                                            max="100000000" value="0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="column is-one-third">
+                                <div class="field">
+                                    <label class="label is-small">Firemaking</label>
+                                    <div class="control">
+                                        <input class="input is-small" type="number" name="firemaking" min="0"
+                                            max="100000000" value="0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="column is-one-third">
+                                <div class="field">
+                                    <label class="label is-small">Mining</label>
+                                    <div class="control">
+                                        <input class="input is-small" type="number" name="mining" min="0"
+                                            max="100000000" value="0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="columns is-vcentered" id="itemsheader">
+                            <div class="column">
+                                <h5 class="title is-5">Item Leech</h5>
+                                <h5 class="subtitle is-6">Skip this step if you do not need to leech bxp.</h5>
+                            </div>
+                            <div class="column is-one-fifth">
+                                <input type="checkbox" class="switch" id="itemstoggle">
+                                <label for="itemstoggle" style="float: right">&nbsp;</label>
+                            </div>
+                        </div>
+
+                        <div class="is-hidden" id="itemssection">
+                            <div class="columns">
+                                <div class="column is-four-fifths">
+                                    <h5 class="title is-6">Hats</h5>
+                                    <h5 class="subtitle is-6">275 pts in each role +1 queen</h5>
+                                </div>
+                                <div class="column is-one-fifth">
+                                    <div class="field">
+                                        <label class="label is-small">Amount</label>
+                                        <div class="control">
+                                            <input class="input is-small" type="number" name="hats" min="0" max="4"
+                                                value="0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="columns">
+                                <div class="column is-four-fifths">
+                                    <h5 class="title is-6">Boots</h5>
+                                    <h5 class="subtitle is-6">100 pts in each role</h5>
+                                </div>
+                                <div class="column is-one-fifth">
+                                    <div class="field">
+                                        <label class="label is-small">Amount</label>
+                                        <div class="control">
+                                            <input class="input is-small" type="number" name="boots" min="0" max="1"
+                                                value="0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="columns">
+                                <div class="column is-four-fifths">
+                                    <h5 class="title is-6">Gloves</h5>
+                                    <h5 class="subtitle is-6">150 pts in each role</h5>
+                                </div>
+                                <div class="column is-one-fifth">
+                                    <div class="field">
+                                        <label class="label is-small">Amount</label>
+                                        <div class="control">
+                                            <input class="input is-small" type="number" name="gloves" min="0" max="1"
+                                                value="0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="columns">
+                                <div class="column is-four-fifths">
+                                    <h5 class="title is-6">Torso</h5>
+                                    <h5 class="subtitle is-6">375 pts in each role +1 queen</h5>
+                                </div>
+                                <div class="column is-one-fifth">
+                                    <div class="field">
+                                        <label class="label is-small">Amount</label>
+                                        <div class="control">
+                                            <input class="input is-small" type="number" name="torso" min="0" max="1"
+                                                value="0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="columns">
+                                <div class="column is-four-fifths">
+                                    <h5 class="title is-6">Skirt</h5>
+                                    <h5 class="subtitle is-6">375 pts in each role +1 queen</h5>
+                                </div>
+                                <div class="column is-one-fifth">
+                                    <div class="field">
+                                        <label class="label is-small">Amount</label>
+                                        <div class="control">
+                                            <input class="input is-small" type="number" name="skirt" min="0" max="1"
+                                                value="0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="columns">
+                                <div class="column is-four-fifths">
+                                    <h5 class="title is-6">Armour Patch</h5>
+                                    <h5 class="subtitle is-6">100 pts in any role</h5>
+                                </div>
+                                <div class="column is-one-fifth">
+                                    <div class="field">
+                                        <label class="label is-small">Amount</label>
+                                        <div class="control">
+                                            <input class="input is-small" type="number" name="patch" min="0" max="4"
+                                                value="0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="columns">
+                                <div class="column is-four-fifths">
+                                    <h5 class="title is-6">Attacker's Insignia</h5>
+                                    <h5 class="subtitle is-6">Lvl 5 attack + 500 pts + 5 kings (todo kings killed)</h5>
+                                </div>
+                                <div class="column is-one-fifth">
+                                    <div class="field">
+                                        <label class="label is-small">Amount</label>
+                                        <div class="control">
+                                            <input class="input is-small" type="number" name="attinsignia" min="0"
+                                                max="1" value="0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="columns">
+                                <div class="column is-four-fifths">
+                                    <h5 class="title is-6">Defender's Insignia</h5>
+                                    <h5 class="subtitle is-6">Lvl 5 attack + 500 pts + 5 kings (todo kings killed)</h5>
+                                </div>
+                                <div class="column is-one-fifth">
+                                    <div class="field">
+                                        <label class="label is-small">Amount</label>
+                                        <div class="control">
+                                            <input class="input is-small" type="number" name="definsignia" min="0"
+                                                max="1" value="0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="columns">
+                                <div class="column is-four-fifths">
+                                    <h5 class="title is-6">Healer's Insignia</h5>
+                                    <h5 class="subtitle is-6">Lvl 5 attack + 500 pts + 5 kings (todo kings killed)</h5>
+                                </div>
+                                <div class="column is-one-fifth">
+                                    <div class="field">
+                                        <label class="label is-small">Amount</label>
+                                        <div class="control">
+                                            <input class="input is-small" type="number" name="healinsignia" min="0"
+                                                max="1" value="0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="columns">
+                                <div class="column is-four-fifths">
+                                    <h5 class="title is-6">Collector's Insignia</h5>
+                                    <h5 class="subtitle is-6">Lvl 5 attack + 500 pts + 5 kings (todo kings killed)</h5>
+                                </div>
+                                <div class="column is-one-fifth">
+                                    <div class="field">
+                                        <label class="label is-small">Amount</label>
+                                        <div class="control">
+                                            <input class="input is-small" type="number" name="colinsignia" min="0"
+                                                max="1" value="0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="column has-text-centered" id="order">
+                    <h5 class="title is-4 request-title">Your order</h5>
+                    <h5 class="subtitle is-6">Based on what you've told us, this is what you need.</h5>
+                    <div class="columns is-mobile">
+                        <div class="column">
+                            <p class="heading">Attacker</p>
+                            <p class="title attacker">0</p>
+                        </div>
+                        <div class="column">
+                            <p class="heading">Defender</p>
+                            <p class="title defender">0</p>
+                        </div>
+                        <div class="column">
+                            <p class="heading">Collector</p>
+                            <p class="title collector">0</p>
+                        </div>
+                        <div class="column">
+                            <p class="heading">Healer</p>
+                            <p class="title healer">0</p>
+                        </div>
+                        <div class="column">
+                            <p class="heading">Queens</p>
+                            <p class="title queen">0</p>
+                        </div>
+                        <div class="column">
+                            <p class="heading">Kings</p>
+                            <p class="title king">0</p>
+                        </div>
+                    </div>
+                    <div class="columns is-mobile bxp">
+                        <div class="column">
+                            <p class="heading">Agility</p>
+                            <p class="title agility">0</p>
+                        </div>
+                        <div class="column">
+                            <p class="heading">Firemaking</p>
+                            <p class="title firemaking">0</p>
+                        </div>
+                        <div class="column">
+                            <p class="heading">Mining</p>
+                            <p class="title mining">0</p>
+                        </div>
+                    </div>
+                    <button id="requestBtn" class="button is-primary is-fullwidth is-outlined" disabled>Request
+                        Leech</button>
+
+                    <pre id="output"></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script type="text/javascript">
+        "use strict";
+        function asInt(input, defaultVal) {
+            return parseInt(input, 10) || (defaultVal || 0);
+        }
+
+        function lvlDiff(hasLvl, wantsLvl) {
+            const pts = [0, 200, 500, 900, 1400];
+            return Math.max(pts[wantsLvl - 1] - pts[hasLvl - 1], 0);
+        }
+
+        function formatInt(n) {
+            let formatted = n.toString(10);
+            let digits = 0;
+            let buf = "";
+            for (let i = formatted.length - 1; i >= 0; i--) {
+                if (digits == 3 && formatted[i] != '-') {
+                    buf = ',' + buf;
+                    digits = 0;
+                }
+                buf = formatted[i] + buf;
+                digits++
+            }
+            return buf;
+        }
+
+        function updateBlackboard(form) {
+            let attackerBlackboardData = [
+                { next: '+200 bonus damage', pts: '200' },
+                { next: '+300 bonus damage', pts: '300' },
+                { next: '+400 bonus damage', pts: '400' },
+                { next: '+500 bonus damage', pts: '500' },
+                { next: '- Mastered -', pts: '---' },
+            ];
+            let defenderBlackboardData = [
+                { next: 'Bonus logs 1', pts: '200' },
+                { next: 'Bonus logs 2', pts: '300' },
+                { next: 'Bonus logs 3', pts: '400' },
+                { next: 'Bonus logs 4', pts: '500' },
+                { next: '- Mastered -', pts: '---' },
+            ];
+            let collectorBlackboardData = [
+                { next: 'Egg convert success 70%', pts: '200' },
+                { next: 'Egg convert success 80%', pts: '300' },
+                { next: 'Egg convert success 90%', pts: '400' },
+                { next: 'Egg convert success 100%', pts: '500' },
+                { next: '- Mastered -', pts: '---' },
+            ];
+            let healerBlackboardData = [
+                { next: 'Heal 25% life points', pts: '200' },
+                { next: 'Heal 40% life points', pts: '300' },
+                { next: 'Heal 45% life points', pts: '400' },
+                { next: 'Heal 50% life points', pts: '500' },
+                { next: '- Mastered -', pts: '---' },
+            ];
+
+            document.querySelector('.attacker-blackboard-next').textContent = attackerBlackboardData[asInt(form.hasattackerlvl.value, 1) - 1].next;
+            document.querySelector('.attacker-blackboard-pts').textContent = attackerBlackboardData[asInt(form.hasattackerlvl.value, 1) - 1].pts;
+            document.querySelector('.defender-blackboard-next').textContent = defenderBlackboardData[asInt(form.hasdefenderlvl.value, 1) - 1].next;
+            document.querySelector('.defender-blackboard-pts').textContent = defenderBlackboardData[asInt(form.hasdefenderlvl.value, 1) - 1].pts;
+            document.querySelector('.collector-blackboard-next').textContent = collectorBlackboardData[asInt(form.hascollectorlvl.value, 1) - 1].next;
+            document.querySelector('.collector-blackboard-pts').textContent = collectorBlackboardData[asInt(form.hascollectorlvl.value, 1) - 1].pts;
+            document.querySelector('.healer-blackboard-next').textContent = healerBlackboardData[asInt(form.hashealerlvl.value, 1) - 1].next;
+            document.querySelector('.healer-blackboard-pts').textContent = healerBlackboardData[asInt(form.hashealerlvl.value, 1) - 1].pts;
+        }
+
+        document.querySelector('#blackboard-toggle').addEventListener('click', () => {
+            document.querySelector('#blackboard').classList.toggle('is-hidden');
+        });
+        document.querySelector('#blackboard').addEventListener('click', () => {
+            document.querySelector('#blackboard').classList.toggle('is-hidden');
+        });
+
+        let sections = {
+            comp: {
+                header: document.getElementById('compheader'),
+                toggle: document.getElementById('comptoggle'),
+            },
+            pts: {
+                header: document.getElementById('ptsheader'),
+                toggle: document.getElementById('ptstoggle'),
+                target: document.getElementById('ptssection'),
+            },
+            bxp: {
+                header: document.getElementById('bxpheader'),
+                toggle: document.getElementById('bxptoggle'),
+                target: document.getElementById('bxpsection'),
+            },
+            items: {
+                header: document.getElementById('itemsheader'),
+                toggle: document.getElementById('itemstoggle'),
+                target: document.getElementById('itemssection'),
+            },
+        }
+
+        Object.keys(sections).forEach(key => {
+            let section = sections[key];
+
+            section.toggle.addEventListener('input', (e) => {
+                if (section.toggle.disabled || !section.target) {
+                    return;
+                }
+
+                if (e.target.checked) {
+                    section.target.classList.remove('is-hidden');
+                } else {
+                    section.target.classList.add('is-hidden');
+                }
+            });
+
+            section.header.addEventListener('click', (e) => {
+                if (section.toggle.disabled) {
+                    return;
+                }
+
+                // aparently, if there is a click handler on a parent,
+                // spacebar won't check/unceck the checkbox...
+                if (e.target === section.toggle && e.clientX === 0 && e.clientY === 0) {
+                    section.toggle.checked = !section.toggle.checked;
+                }
+
+                if (section.toggle.checked) {
+                    section.toggle.checked = false;
+                } else {
+                    section.toggle.checked = true;
+                }
+
+                // this click won't trigger an input event on the form,
+                // so call the handler directly. TODO: ew.
+                formOnChange();
+
+                if (!section.target) {
+                    return;
+                }
+
+                if (!section.toggle.checked) {
+                    section.target.classList.add('is-hidden');
+                } else {
+                    section.target.classList.remove('is-hidden');
+                }
+
+
+            });
+        });
+
+        let requestBtn = document.getElementById('requestBtn');
+
+        let orderRoot = document.getElementById('order');
+        let orderBxp = orderRoot.querySelector('.bxp');
+        let order = {
+            attacker: orderRoot.querySelector('.attacker'),
+            defender: orderRoot.querySelector('.defender'),
+            collector: orderRoot.querySelector('.collector'),
+            healer: orderRoot.querySelector('.healer'),
+            queen: orderRoot.querySelector('.queen'),
+            agility: orderRoot.querySelector('.agility'),
+            firemaking: orderRoot.querySelector('.firemaking'),
+            mining: orderRoot.querySelector('.mining'),
+            king: orderRoot.querySelector('.king'),
+        };
+
+        let formRoot = document.getElementById('form');
+        let ticketsRoot = document.getElementById('tickets');
+        let form = {
+            rsn: formRoot.querySelector('input[name=rsn]'),
+            ironman: formRoot.querySelector('input[name=ironman]'),
+            progress: formRoot.querySelector('select[name=progress]'),
+            charges: formRoot.querySelector('input[name=charges]'),
+            hm10tickets: formRoot.querySelector('input[name=hm10tickets]'),
+
+            hasattackerpts: formRoot.querySelector('input[name=hasattackerpts]'),
+            hasattackerlvl: formRoot.querySelector('select[name=hasattackerlvl]'),
+            hasdefenderpts: formRoot.querySelector('input[name=hasdefenderpts]'),
+            hasdefenderlvl: formRoot.querySelector('select[name=hasdefenderlvl]'),
+            hascollectorpts: formRoot.querySelector('input[name=hascollectorpts]'),
+            hascollectorlvl: formRoot.querySelector('select[name=hascollectorlvl]'),
+            hashealerpts: formRoot.querySelector('input[name=hashealerpts]'),
+            hashealerlvl: formRoot.querySelector('select[name=hashealerlvl]'),
+
+            wantsattackerlvl: formRoot.querySelector('select[name=wantsattackerlvl]'),
+            wantsdefenderlvl: formRoot.querySelector('select[name=wantsdefenderlvl]'),
+            wantscollectorlvl: formRoot.querySelector('select[name=wantscollectorlvl]'),
+            wantshealerlvl: formRoot.querySelector('select[name=wantshealerlvl]'),
+
+            agility: formRoot.querySelector('input[name=agility]'),
+            firemaking: formRoot.querySelector('input[name=firemaking]'),
+            mining: formRoot.querySelector('input[name=mining]'),
+
+            comp: formRoot.querySelector('input[name=comp]'),
+            trimking: formRoot.querySelector('input[name=trimking]'),
+
+            hats: formRoot.querySelector('input[name=hats]'),
+            boots: formRoot.querySelector('input[name=boots]'),
+            gloves: formRoot.querySelector('input[name=gloves]'),
+            torso: formRoot.querySelector('input[name=torso]'),
+            skirt: formRoot.querySelector('input[name=skirt]'),
+            patch: formRoot.querySelector('input[name=patch]'),
+            attinsignia: formRoot.querySelector('input[name=attinsignia]'),
+            definsignia: formRoot.querySelector('input[name=definsignia]'),
+            healinsignia: formRoot.querySelector('input[name=healinsignia]'),
+            colinsignia: formRoot.querySelector('input[name=colinsignia]'),
+        }
+        let output = document.querySelector('#output');
+
+        // disable bxp if ironman
+        formRoot.ironman.addEventListener('input', (e) => {
+            if (e.target.checked) {
+                form.agility.value = 0;
+                form.firemaking.value = 0;
+                form.mining.value = 0;
+                form.agility.disabled = true;
+                form.firemaking.disabled = true;
+                form.mining.disabled = true;
+
+                sections.bxp.toggle.checked = false;
+                sections.bxp.toggle.disabled = true;
+                sections.bxp.target.classList.add('is-hidden');
+
+                orderBxp.classList.add('is-hidden');
+            } else {
+                form.agility.disabled = false;
+                form.firemaking.disabled = false;
+                form.mining.disabled = false;
+
+                sections.bxp.toggle.disabled = false;
+
+                orderBxp.classList.remove('is-hidden');
+            }
+        });
+
+        updateBlackboard(form);
+
+        formRoot.addEventListener('input', formOnChange);
+
+        function formOnChange() {
+            // keep "wants lvl" in sync with "has lvl"
+            if (asInt(form.hasattackerlvl.value, 1) > asInt(form.wantsattackerlvl.value)) {
+                form.wantsattackerlvl.value = form.hasattackerlvl.value;
+            }
+            if (asInt(form.hasdefenderlvl.value, 1) > asInt(form.wantsdefenderlvl.value)) {
+                form.wantsdefenderlvl.value = form.hasdefenderlvl.value;
+            }
+            if (asInt(form.hascollectorlvl.value, 1) > asInt(form.wantscollectorlvl.value)) {
+                form.wantscollectorlvl.value = form.hascollectorlvl.value;
+            }
+            if (asInt(form.hashealerlvl.value, 1) > asInt(form.wantshealerlvl.value)) {
+                form.wantshealerlvl.value = form.hashealerlvl.value;
+            }
+
+            // update blackboard
+            updateBlackboard(form);
+
+            // disable tickets if not ironman && hm10
+            if (form.ironman.checked && form.progress.value === "4") {
+                ticketsRoot.classList.remove('is-hidden');
+            } else {
+                ticketsRoot.classList.add('is-hidden');
+                form.hm10tickets.value = 0;
+            }
+
+            // apply validation styles
+            Object.keys(form).forEach(key => {
+                let e = form[key];
+                e.classList.remove('is-danger');
+                e.classList.remove('is-success');
+
+                if (!e.checkValidity()) {
+                    e.classList.add('is-danger');
+                }
+            });
+
+            let wantsattackerlvl = asInt(form.wantsattackerlvl.value, 1);
+            let wantsdefenderlvl = asInt(form.wantsdefenderlvl.value, 1);
+            let wantscollectorlvl = asInt(form.wantscollectorlvl.value, 1);
+            let wantshealerlvl = asInt(form.wantshealerlvl.value, 1);
+
+            // keep "wants lvl" in sync with insignias
+            if (asInt(form.attinsignia.value) > 0) {
+                wantsattackerlvl = 5;
+            }
+            if (asInt(form.definsignia.value) > 0) {
+                wantsdefenderlvl = 5;
+            }
+            if (asInt(form.colinsignia.value) > 0) {
+                wantscollectorlvl = 5;
+            }
+            if (asInt(form.healinsignia.value) > 0) {
+                wantshealerlvl = 5;
+            }
+
+            let wantsattackerpts = 0; //asInt(form.wantsattackerpts.value);
+            let wantsdefenderpts = 0; //asInt(form.wantsdefenderpts.value);
+            let wantscollectorpts = 0; //asInt(form.wantscollectorpts.value);
+            let wantshealerpts = 0; //asInt(form.wantshealerpts.value);
+
+            // keep "wants lvl" in sync with insignias
+            if (asInt(form.attinsignia.value) > 0) {
+                wantsattackerpts += 500;
+            }
+            if (asInt(form.definsignia.value) > 0) {
+                wantsdefenderpts += 500;
+            }
+            if (asInt(form.colinsignia.value) > 0) {
+                wantscollectorpts += 500;
+            }
+            if (asInt(form.healinsignia.value) > 0) {
+                wantshealerpts += 500;
+            }
+            let needsattackerpts = wantsattackerpts - asInt(form.hasattackerpts.value) + lvlDiff(asInt(form.hasattackerlvl.value, 1), wantsattackerlvl);
+            let needsdefenderpts = wantsdefenderpts - asInt(form.hasdefenderpts.value) + lvlDiff(asInt(form.hasdefenderlvl.value, 1), wantsdefenderlvl);
+            let needscollectorpts = wantscollectorpts - asInt(form.hascollectorpts.value) + lvlDiff(asInt(form.hascollectorlvl.value, 1), wantscollectorlvl);
+            let needshealerpts = wantshealerpts - asInt(form.hashealerpts.value) + lvlDiff(asInt(form.hashealerlvl.value, 1), wantshealerlvl);
+
+            let request = {
+                rsn: form.rsn.value || "",
+                ironman: form.ironman.checked,
+                progress: asInt(form.progress.value),
+                charges: asInt(form.charges.value),
+                pts: {
+                    attacker: needsattackerpts,
+                    defender: needsdefenderpts,
+                    healer: needshealerpts,
+                    collector: needscollectorpts,
+                },
+                bxp: {
+                    agility: asInt(form.agility.value),
+                    firemaking: asInt(form.firemaking.value),
+                    mining: asInt(form.mining.value),
+                },
+                // queen: asInt(form.queen.value),
+                // king: asInt(form.king.value),
+                queen: 0,
+                king: 0,
+                hm10tickets: asInt(form.hm10tickets.value),
+            };
+
+            // armour
+            if (asInt(form.hats.value) > 0) {
+                let count = asInt(form.hats.value);
+                request.pts.attacker += 275 * count;
+                request.pts.defender += 275 * count;
+                request.pts.healer += 275 * count;
+                request.pts.collector += 275 * count;
+                request.queen += count;
+            }
+            if (asInt(form.boots.value) > 0) {
+                let count = asInt(form.boots.value);
+                request.pts.attacker += 100 * count;
+                request.pts.defender += 100 * count;
+                request.pts.healer += 100 * count;
+                request.pts.collector += 100 * count;
+            }
+            if (asInt(form.gloves.value) > 0) {
+                let count = asInt(form.gloves.value);
+                request.pts.attacker += 150 * count;
+                request.pts.defender += 150 * count;
+                request.pts.healer += 150 * count;
+                request.pts.collector += 150 * count;
+            }
+            if (asInt(form.torso.value) > 0) {
+                let count = asInt(form.torso.value);
+                request.pts.attacker += 375 * count;
+                request.pts.defender += 375 * count;
+                request.pts.healer += 375 * count;
+                request.pts.collector += 375 * count;
+                request.queen += count;
+            }
+            if (asInt(form.skirt.value) > 0) {
+                let count = asInt(form.skirt.value);
+                request.pts.attacker += 375 * count;
+                request.pts.defender += 375 * count;
+                request.pts.healer += 375 * count;
+                request.pts.collector += 375 * count;
+                request.queen += count;
+            }
+            if (asInt(form.patch.value) > 0) {
+                let count = asInt(form.patch.value);
+                request.pts.collector += 100 * count;
+            }
+
+            // if leech needs comp, add it
+            if (form.comp.checked && request.queen === 0) {
+                request.queen = 1;
+            }
+
+            // insignias
+            if (asInt(form.attinsignia.value) > 0) {
+                request.king += 5; //TODO: leech might have killed kings before
+            }
+            if (asInt(form.definsignia.value) > 0) {
+                request.king += 5; //TODO: leech might have killed kings before
+            }
+            if (asInt(form.colinsignia.value) > 0) {
+                request.king += 5; //TODO: leech might have killed kings before
+            }
+            if (asInt(form.healinsignia.value) > 0) {
+                request.king += 5; //TODO: leech might have killed kings before
+            }
+
+            // if leech needs king for trim, add it
+            if (form.trimking.checked && request.king === 0) {
+                request.king = 1;
+            }
+
+            let needsPts = request.pts.attacker > 0 || request.pts.defender > 0 || request.pts.healer > 0 || request.pts.collector > 0;
+            let needsBxp = request.bxp.agility > 0 || request.bxp.firemaking > 0 || request.bxp.mining > 0;
+            let notEmpty = needsPts || needsBxp || request.queen > 0 || request.king > 0;
+
+            order.attacker.textContent = request.pts.attacker;
+            order.defender.textContent = request.pts.defender;
+            order.collector.textContent = request.pts.collector;
+            order.healer.textContent = request.pts.healer;
+
+            order.agility.textContent = formatInt(request.bxp.agility);
+            order.firemaking.textContent = formatInt(request.bxp.firemaking);
+            order.mining.textContent = formatInt(request.bxp.mining);
+
+            order.queen.textContent = request.queen;
+            order.king.textContent = request.king;
+
+
+            // if the leech needs pts, don't let him hide the section.
+            if (needsattackerpts || needsdefenderpts || needscollectorpts || needshealerpts) {
+                sections.pts.toggle.disabled = true;
+                sections.pts.toggle.checked = true;
+                sections.pts.target.classList.remove('is-hidden');
+            } else {
+                sections.pts.toggle.disabled = false;
+            }
+
+            // if the leech needs bxp, don't let him hide the section.
+            if (request.bxp.agility > 0 || request.bxp.firemaking > 0 || request.bxp.mining > 0) {
+                sections.bxp.toggle.disabled = true;
+                sections.bxp.target.classList.remove('is-hidden');
+            } else if (!request.ironman) {
+                sections.bxp.toggle.disabled = false;
+            }
+
+            let valid = formRoot.checkValidity();
+            if (valid && notEmpty) {
+                requestBtn.disabled = false;
+                requestBtn.classList.remove('is-outlined');
+            } else {
+                requestBtn.disabled = true;
+                requestBtn.classList.add('is-outlined');
+            }
+
+            if (valid) {
+                output.textContent = process(request);
+            } else {
+                output.textContent = "";
+            }
+        }
+    </script>
+</body>
+
+</html>
