@@ -24,7 +24,7 @@
 		let mod, inst;
 		let wasmReadyResolve;
 		window.wasmReady = new Promise((resolve) => wasmReadyResolve = resolve);
-		WebAssembly.instantiateStreaming(fetch("assets/lib.wasm"), go.importObject).then(async result => {
+		WebAssembly.instantiateStreaming(fetch("https://flga.github.io/alphacalc/beta/assets/lib.wasm"), go.importObject).then(async result => {
 			mod = result.module;
 			inst = result.instance;
 			wasmReadyResolve();
@@ -35,6 +35,6 @@
 
 <body>
 	<app-root></app-root>
-<script src="https://flga.github.io/alphacalc/beta/runtime-es2015.ae6559855dde9b4d7225.js" type="module"></script><script src="https://flga.github.io/alphacalc/beta/polyfills-es2015.5728f680576ca47e99fe.js" type="module"></script><script src="https://flga.github.io/alphacalc/beta/runtime-es5.610c9efac644a4aab640.js" nomodule></script><script src="https://flga.github.io/alphacalc/beta/polyfills-es5.7f43b971448d2fb49202.js" nomodule></script><script src="https://flga.github.io/alphacalc/beta/main-es2015.bda720f590a2818e6a62.js" type="module"></script><script src="https://flga.github.io/alphacalc/beta/main-es5.9edcd1a3bde74dc91cd8.js" nomodule></script></body>
+<script src="https://flga.github.io/alphacalc/beta/runtime-es2015.ae6559855dde9b4d7225.js" type="module"></script><script src="https://flga.github.io/alphacalc/beta/polyfills-es2015.5728f680576ca47e99fe.js" type="module"></script><script src="https://flga.github.io/alphacalc/beta/runtime-es5.610c9efac644a4aab640.js" nomodule></script><script src="https://flga.github.io/alphacalc/beta/polyfills-es5.7f43b971448d2fb49202.js" nomodule></script><script src="https://flga.github.io/alphacalc/beta/main-es2015.40e9d93298501a34fcd1.js" type="module"></script><script src="https://flga.github.io/alphacalc/beta/main-es5.7be85938cdbe471de00b.js" nomodule></script></body>
 
 </html>
