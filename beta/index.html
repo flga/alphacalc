@@ -10,7 +10,7 @@
 	<link rel="icon" type="image/x-icon" href="favicon.ico">
 	<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500&display=swap" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-	<script src="assets/wasm_exec.js"></script>
+	<script src="https://flga.github.io/alphacalc/beta/assets/wasm_exec.js"></script>
 	<script>
 		if (!WebAssembly.instantiateStreaming) {
 			// polyfill
@@ -24,7 +24,7 @@
 		let mod, inst;
 		let wasmReadyResolve;
 		window.wasmReady = new Promise((resolve) => wasmReadyResolve = resolve);
-		WebAssembly.instantiateStreaming(fetch("assets/lib.wasm"), go.importObject).then(async result => {
+		WebAssembly.instantiateStreaming(fetch("https://flga.github.io/alphacalc/beta/assets/lib.wasm"), go.importObject).then(async result => {
 			mod = result.module;
 			inst = result.instance;
 			wasmReadyResolve();
